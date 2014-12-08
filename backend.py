@@ -22,7 +22,10 @@ from twisted.internet.defer import inlineCallbacks
 
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession
-from twitter import *
+from twitter.util import printNicely
+from twitter.stream import TwitterStream, Timeout, HeartbeatTimeout, Hangup
+from twitter.oauth import OAuth
+from twitter.oauth2 import OAuth2, read_bearer_token_file
 
 class Component(ApplicationSession):
     """
@@ -39,7 +42,16 @@ class Component(ApplicationSession):
             token='19982211-kCJThkO6AWRO6yGQkO00b3rqGUg44Zr35RHTacRB4',
             token_secret='nTAhC1Wb9QoZM28NGcbrbfdunuPlnWM0Nk8bDaG0zKw'
         )
+        while True:
+            for obj in self.connectToStream(auth):
+                self.publish('com.tweettrek.tweet',data = obj)
+                yield sleep(0.2)
 
+
+
+        #stream = TwitterStream(auth = auth, secure = True, heartbeat_timeout=9000)
+    def connectToStream(self, auth):
+        printNicely("-- Connecting to Stream --")
         stream = TwitterStream(auth = auth, secure = True)
         tweet_iter = stream.statuses.filter(track = "love")
 
@@ -50,11 +62,23 @@ class Component(ApplicationSession):
 
         for tweet in tweet_iter:
             # check whether this is a valid tweet
-            if tweet.get('text'):
-                print tweet.get('text')
-                obj = {'text': tweet["text"], 'user': tweet["user"]["screen_name"]}
-                self.publish('com.tweettrek.tweet',data = obj)
-                yield sleep(0.1)
+            if tweet is None:
+                printNicely("-- None --")
+                return
+            elif tweet is Timeout:
+                printNicely("-- Timeout --")
+                return
+            elif tweet is HeartbeatTimeout:
+                printNicely("-- Heartbeat Timeout --")
+                return
+            elif tweet is Hangup:
+                printNicely("-- Hangup --")
+                return
+            elif tweet.get('text'):
+            #   obj = {'text': tweet["text"], 'user': tweet["user"]["screen_name"]}
+                obj = {'text': tweet["text"]}
+                yield obj
+
 
 if __name__ == '__main__':
    from autobahn.twisted.wamp import ApplicationRunner
