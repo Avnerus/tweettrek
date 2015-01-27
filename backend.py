@@ -44,6 +44,7 @@ class Component(ApplicationSession):
         )
         while True:
             for obj in self.connectToStream(auth):
+		#printNicely(obj['text'])
                 self.publish('com.tweettrek.tweet',data = obj)
                 yield sleep(0.2)
 
@@ -52,7 +53,7 @@ class Component(ApplicationSession):
         #stream = TwitterStream(auth = auth, secure = True, heartbeat_timeout=9000)
     def connectToStream(self, auth):
         printNicely("-- Connecting to Stream --")
-        stream = TwitterStream(auth = auth, secure = True)
+        stream = TwitterStream(auth = auth, secure = True, timeout = 5, heartbeat_timeout = 90)
         tweet_iter = stream.statuses.filter(track = "love")
 
        # while True:
