@@ -37,23 +37,27 @@ class Component(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
         auth = OAuth(
-            consumer_key='gKaAE8q1gtSiKxxsTBZUA',
+	    consumer_key='gKaAE8q1gtSiKxxsTBZUA',
             consumer_secret='zvLMiCy1Lx49OsBGksAVLPYfXBEn2iASvHSJGXtw8',
             token='19982211-kCJThkO6AWRO6yGQkO00b3rqGUg44Zr35RHTacRB4',
             token_secret='nTAhC1Wb9QoZM28NGcbrbfdunuPlnWM0Nk8bDaG0zKw'
         )
         while True:
-            for obj in self.connectToStream(auth):
-		#printNicely(obj['text'])
-                self.publish('com.tweettrek.tweet',data = obj)
-                yield sleep(0.2)
-
-
-
+            try:
+		for obj in self.connectToStream(auth):
+			self.publish('com.tweettrek.tweet',data = obj)
+	   		yield sleep(0.2)
+            except:
+	        e = sys.exc_info()[0]	
+	        printNicely("Exception")
+	        printNicely(e)
+	        printNicely("Sleeping for 1 minute")
+	        sleep(60);
+ 
         #stream = TwitterStream(auth = auth, secure = True, heartbeat_timeout=9000)
     def connectToStream(self, auth):
         printNicely("-- Connecting to Stream --")
-        stream = TwitterStream(auth = auth, secure = True, timeout = 5, heartbeat_timeout = 90)
+        stream = TwitterStream(auth = auth, secure = True, timeout = 20, heartbeat_timeout = 90)
         tweet_iter = stream.statuses.filter(track = "love")
 
        # while True:
@@ -68,6 +72,7 @@ class Component(ApplicationSession):
                 return
             elif tweet is Timeout:
                 printNicely("-- Timeout --")
+                sleep(5);
                 return
             elif tweet is HeartbeatTimeout:
                 printNicely("-- Heartbeat Timeout --")
